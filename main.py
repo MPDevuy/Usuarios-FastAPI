@@ -21,13 +21,7 @@ app.mount("/static", StaticFiles(directory="static"),name="static") #mount estab
 
 
 
-@app.get("/")
-async def root():
-    return "Hola MartinDev Bienvenido de a este mundo"
-
-@app.get("/vale")
-async def vale():
-    return "Vale es una niña amorosa, que le gustan los gatos y gatas"          
+         
 
 @app.get("/url")
 async def url():
