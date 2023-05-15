@@ -1,0 +1,2 @@
+# Usuarios-FastAPI
+Api de usuarios con python y el framework FastAPI, DB Mongo, jwt auth 
