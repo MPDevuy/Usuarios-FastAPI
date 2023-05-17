@@ -71,24 +71,16 @@ async def put_user(user:User):
     else:
         return user
 
-#USando Delete o para eliminar es mejor usar un Path en vez de query
-# Se busca el id en este caso del usuario para eliminarlo    
-@router.delete("/{id}",status_code=status.HTTP_204_NO_CONTENT  )
-async def user(id:int):
 
-    found = False
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def user(id:str):
 
-    for index, saved_user in enumerate(users_list): #Busca usuario para eliminarlo 
-        if saved_user.id == id:
-            del users_list [index]  #del elimina usuario de la lista
-            found = True
-            raise HTTPException(status_code=status.HTTP_204_NO_CONTENT , detail="Se elimino el  Usuario" )
-        
+    found = client_db.local.users.find_one_and_delete({"_id": ObjectId(id)})
+           
     if not found:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No a eliminado a el  Usuario" ) 
 
-# busca usuario mediante el id con filter si no  lo encuentra sale Error 
-# filter se puede usar para buscar objetos en una lista   
+  
 def search_user(Field: str, key):
     
     try:
