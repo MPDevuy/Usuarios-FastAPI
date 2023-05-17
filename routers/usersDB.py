@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 from db.models.user import User
-from db.schemas.user import user_schema
+from db.schemas.user import user_schema, users_schemas
 from db.client import client_db
+from bson import ObjectId
 
 
 router = APIRouter(prefix="/usersdb",
@@ -15,28 +16,28 @@ users_list = []
 
 
 
-@router.get("/")
+@router.get("/", response_model= list[User])
 async def users():
-      return users_list   
+      return users_schemas(client_db.local.users.find()) 
 
 
 # Usando Path 
 @router.get("/{id}")
-async def user(id:int):
-   return search_user(id)
+async def user(id:str):
+   return search_user("_id", ObjectId(id))
     
 # Usando Query hay que usar ?id=1 se concatena con & etc...
 @router.get("/userquerydb/")
-async def user(id:int):
-   return search_user(id)
+async def user(id:str):
+   return search_user("_id", ObjectId(id))
 
 #Usando Post para crear un usuario
 @router.post("/",response_model=User, status_code= status.HTTP_201_CREATED)
 async def user(user:User):
 
-    if type(search_user_by_email(user.email)) == User:
-        raise HTTPException(
-            status_code= status.HTTP_404_NOT_FOUND, detail= "Ya existe el Usuario")
+    if type(search_user("email".user.email)) == User:
+              raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND, detail= "Ya existe el Usuario")
       
  
    # transformamos el usuario en un diccionario
@@ -88,10 +89,10 @@ async def user(id:int):
 
 # busca usuario mediante el id con filter si no  lo encuentra sale Error 
 # filter se puede usar para buscar objetos en una lista   
-def search_user_by_email(email:str):
+def search_user(Field: str, key):
     
     try:
-        user = user_schema (client_db.local.users.find_one({"email": email}))              
+        user = user_schema (client_db.local.users.find_one({Field: key}))              
         return User(**user_schema(user))
    
        
@@ -99,5 +100,3 @@ def search_user_by_email(email:str):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se ha encontrado el usuario")
     
 
-def search_user(id:int):
-    return "Vacio"
