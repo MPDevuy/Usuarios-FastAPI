@@ -12,13 +12,10 @@ router = APIRouter(prefix="/usersdb",
 
 
 
-users_list = []
-
-
 
 @router.get("/", response_model= list[User])
 async def users():
-      return users_schemas(client_db.local.users.find()) 
+      return users_schemas(client_db.cloud.users.find()) 
 
 
 # Usando Path 
@@ -35,47 +32,47 @@ async def user(id:str):
 @router.post("/",response_model=User, status_code= status.HTTP_201_CREATED)
 async def user(user:User):
 
-    if type(search_user("email".user.email)) == User:
-              raise HTTPException(
+    if type(search_user("email",user.email)) == User:
+             raise HTTPException(
                 status_code= status.HTTP_404_NOT_FOUND, detail= "Ya existe el Usuario")
       
- 
+    
    # transformamos el usuario en un diccionario
     user_dict = dict(user)
      
     del user_dict["id"]
 
    #conectar a la BD para insertar usuarios
-    id =  client_db.local.users.insert_one(user_dict).inserted_id
+    id =  client_db.cloud.users.insert_one(user_dict).inserted_id
 
-    new_user = user_schema (client_db.local.users.find_one({"_id":id})) #MongoDB crea el id con _id
+    new_user = user_schema (client_db.cloud.users.find_one({"_id":id})) #MongoDB crea el id con _id
 
-    return User(**new_user)
+    return    User(**new_user)
 
 
 
 
 #Usando Put para actualizar un usuario
 @router.put("/", response_model=User, status_code=status.HTTP_201_CREATED)
-async def put_user(user:User):
+async def user(user:User):
+         
+    user_dict = dict(user)   #convertimos el usuario en dicionario y eliminamos el id 
+    del user_dict["id"]
     
-    found = False
-
-    for index, saved_user in enumerate(users_list):
-        if saved_user.id == user.id:
-            users_list [index] = user
-            found = True
-
-    if not found:
-        raise HTTPException(status_code=status.HTTP_304_NOT_MODIFIED, detail="No se Actualizo  Usuario" )
-    else:
-        return user
+    try:
+        client_db.cloud.users.find_one_and_replace(
+             {"_id": ObjectId(user.id)}, user_dict)
+    except:
+           raise HTTPException(
+                status_code=status.HTTP_304_NOT_MODIFIED, detail="No se Actualizo  Usuario" )
+            
+    return search_user("_id", ObjectId(user.id))
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def user(id:str):
 
-    found = client_db.local.users.find_one_and_delete({"_id": ObjectId(id)})
+    found = client_db.cloud.users.find_one_and_delete({"_id": ObjectId(id)})
            
     if not found:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No a eliminado a el  Usuario" ) 
@@ -84,11 +81,12 @@ async def user(id:str):
 def search_user(Field: str, key):
     
     try:
-        user = user_schema (client_db.local.users.find_one({Field: key}))              
+        user = client_db.cloud.users.find_one({Field: key})             
         return User(**user_schema(user))
    
        
     except:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No se ha encontrado el usuario")
+        return HTTPException(
+             status_code=status.HTTP_404_NOT_FOUND, detail="No se ha encontrado el usuario")
     
 
